@@ -59,15 +59,16 @@ def base_generate(model, tokenizer, input_ids, max_new_tokens=10,
         'generate_ids': generate_ids,
     }
 
-def exact_self_speculative_generate(model, tokenizer, input_ids, max_new_tokens=10, early_stop=False,
+def exact_self_speculative_generate(model, tokenizer, input_ids, max_tokens=2000, early_stop=False,
                  max_step_draft=8, th_stop_draft=0.8, auto_th_stop_draft=True, auto_parameters=[1,0.5,0.9,1e-2,0.9],
                  do_sample=False, do_sample_draft=False, top_k=0, top_p=0.85, temperature=0.2):
     
-    step = 0
+    last_step = step = 0
     step_draft = 0
     step_verify = 0
     
     current_input_ids = input_ids
+    max_new_tokens = max_tokens - input_ids.size(0)
     generate_ids = torch.empty([input_ids.size(0), max_new_tokens+max_step_draft], dtype=torch.long, device=model.device)
     draft_generate_ids = torch.empty([input_ids.size(0), max_step_draft+1], dtype=torch.long, device=model.device)
     past_key_values = None
@@ -168,6 +169,9 @@ def exact_self_speculative_generate(model, tokenizer, input_ids, max_new_tokens=
                     th_stop_draft = auto_parameters[4] * th_stop_draft + (1-auto_parameters[4]) * new_th_stop_draft
                     # print('draft_output_probs: {:.4f}, th_stop_draft: {:.4f}, tmp_matchness: {:.2f}, drafted_n_tokens: {:d}'.format(
                     #     draft_output_probs.item(), th_stop_draft, tmp_matchness, drafted_n_tokens))
+
+            print(tokenizer.decode(generate_ids[0, last_step:step]), end=' ', flush=True)
+            last_step = step
 
             if early_stop and tokenizer.eos_token_id in output_ids[0].tolist():
                 break
@@ -318,7 +322,6 @@ def self_speculative_sample(model, tokenizer, input_ids, max_new_tokens=10, earl
                     th_stop_draft = auto_parameters[4] * th_stop_draft + (1-auto_parameters[4]) * new_th_stop_draft
                     # print('draft_output_probs: {:.4f}, th_stop_draft: {:.4f}, tmp_matchness: {:.2f}, drafted_n_tokens: {:d}'.format(
                     #     draft_output_probs.item(), th_stop_draft, tmp_matchness, drafted_n_tokens))
-
 
             if early_stop and tokenizer.eos_token_id in output_ids[0].tolist():
                 break
