@@ -145,6 +145,7 @@ def exact_self_speculative_generate(model, tokenizer, input_ids, max_tokens=2000
                         (k[:, :, :-(max_of_max_matched - max_matched)], v[:, :, :-(max_of_max_matched - max_matched)]) for k, v in past_key_values
                     ]
 
+                if hasattr(model, 'timer'): model.timer._hist['bonus tokens'].append(output_ids.shape[-1] - 1)
                 generate_ids[:, step:step+output_ids.size(1)] = output_ids
                 current_input_ids = output_ids[:, -1:]
 

@@ -1,2 +1,4 @@
 transformers==4.33.1
-numpy
+accelerate
+sentencepiece
+fschat
